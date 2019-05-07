@@ -13,8 +13,8 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: Function
       CodeUri: src/Function
-      Handler: index.handler
-      Runtime: nodejs8.10
+      Handler: Handler::handler
+      Runtime: java8
       MemorySize: 3008
       Timeout: 30
       Tracing: Active
@@ -22,11 +22,30 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - SQSSendMessagePolicy:
             QueueName: !GetAtt Queue.QueueName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table
       Environment:
         Variables:
           QUEUE_NAME: !GetAtt Queue.QueueName
           QUEUE_ARN: !GetAtt Queue.Arn
           QUEUE_URL: !Ref Queue
+          TABLE_NAME: !Ref Table
+          TABLE_ARN: !GetAtt Table.Arn
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-Table
+    Metadata:
+      StackeryName: mytable
 Parameters:
   StackTagName:
     Type: String
